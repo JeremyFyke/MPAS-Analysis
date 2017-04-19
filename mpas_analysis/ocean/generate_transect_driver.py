@@ -20,13 +20,17 @@ from transect_generator import transectGenerator
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib.ticker as ticker
+import argparse
 
-SOSEdataFile="/lustre/scratch2/turquoise/jer/THETA_AnnualAvg.mat"
+parser=argparse.ArgumentParser(description="Get start, end MPAS years.")
+parser.add_argument('--MPAS_yrs',type=int,dest="MPAS_yrs")
+parser.add_argument('--MPAS_yre',type=int,dest="MPAS_yre")
+args=parser.parse_args()
+MPAS_yrs=args.MPAS_yrs
+MPAS_yre=args.MPAS_yre
+SOSEdataFile="/scratch1/scratchdirs/fyke/annual_MPAS_averages/THETA_AnnualAvg.mat"
 vnames=['THETA_2005','THETA_2006','THETA_2007','THETA_2008','THETA_2009','THETA_2010']
-vnames=['THETA_2010']
-SOSEgridFile="/lustre/scratch2/turquoise/jer/SOSEgrid.mat"
-MPAS_yrs=2
-MPAS_yre=2
+SOSEgridFile="/scratch1/scratchdirs/fyke/annual_MPAS_averages/SOSEgrid.mat"
 LoadSOSEData=1
 
 d2r=math.radians(1.)
@@ -41,9 +45,9 @@ if LoadSOSEData==1:
     ## load, time-average, and massage into form for input into transectGenerator
     SOSETemperature=np.zeros((nSOSECells,nSOSEDepth))
     for n,f in enumerate(vnames):
-	print("Loading time slice: "+f)
-    arr=scipy.io.loadmat(SOSEdataFile)[f]
-    SOSETemperature[:,:]=SOSETemperature[:,:]+arr.reshape(-1,arr.shape[-1])
+	print("Loading SOSE time slice: "+f)
+        arr=scipy.io.loadmat(SOSEdataFile)[f]
+        SOSETemperature[:,:]=SOSETemperature[:,:]+arr.reshape(-1,arr.shape[-1])
     SOSETemperature=SOSETemperature[:,:]/nSOSEYears
     SOSElon=np.ravel(scipy.io.loadmat(SOSEgridFile)['XC'])*d2r #degrees, 0->2pi
     SOSElat=np.ravel(scipy.io.loadmat(SOSEgridFile)['YC'])*d2r #degrees, -pi/2->pi/2
@@ -62,7 +66,7 @@ if LoadSOSEData==1:
     i=np.where(SOSETemperature==0.0)
     SOSETemperature[i]=np.nan
 
-MPASgridFile="/lustre/scratch2/turquoise/jer/MPASO_files_from_Edison/MPAS_grid.nc"
+MPASgridFile="/scratch1/scratchdirs/fyke/annual_MPAS_averages/MPAS_grid.nc"
 f=Dataset(MPASgridFile)
 MPASlat=f.variables["latCell"][:] #-pi/2->pi/2
 MPASlon=f.variables["lonCell"][:] #0->2pi
@@ -104,10 +108,10 @@ for lon in np.arange(-175,175,5): #start lat, start lon, end lat, end lon.
 nTransects=len(transectDistance)
 
 #Loop over MPAS years, making set of transects for each year
-for yr in np.arange(MPAS_yrs,MPAS_yrs+1):
+for yr in np.arange(MPAS_yrs,MPAS_yre+1):
     yrlong="%04d"%yr
     print("Generating transects for "+yrlong)
-    MPASdataFile="/lustre/scratch2/turquoise/jer/MPASO_files_from_Edison/"+yrlong+".nc"
+    MPASdataFile="/scratch1/scratchdirs/fyke/annual_MPAS_averages/"+yrlong+".nc"
     # load MPAS data
     print("Loading MPAS data...")
     f=MFDataset(MPASdataFile)
@@ -201,7 +205,7 @@ for yr in np.arange(MPAS_yrs,MPAS_yrs+1):
 	x,y=m([lonTransect[0]/d2r, lonTransect[-1]/d2r], [latTransect[0]/d2r, latTransect[-1]/d2r])
 	m.plot(x,y,'r')
 
-	plt.savefig("/lustre/scratch2/turquoise/jer/figs/year_"+yrlong+"_transect."+'%03d'%t+".png",bbox_inches='tight')
+	plt.savefig("figs/year_"+yrlong+"_transect."+'%03d'%t+".png",bbox_inches='tight')
 	plt.close(fig)
 
 
